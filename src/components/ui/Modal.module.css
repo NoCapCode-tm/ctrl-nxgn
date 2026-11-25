@@ -1,0 +1,80 @@
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 75;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 15, 25, 0.35);
+  backdrop-filter: blur(2px);
+}
+
+.frame {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  overflow-y: auto;
+}
+
+.panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(44rem, 100%);
+  max-height: calc(100dvh - 2.5rem);
+  overflow: hidden;
+  border-radius: 1.25rem;
+  background: var(--app-surface);
+  color: var(--app-ink);
+  border: 1px solid var(--app-line);
+  box-shadow: 0 28px 60px -16px rgba(16, 24, 40, 0.4);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.45rem;
+  border-bottom: 1px solid var(--app-line);
+}
+
+.title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.closeBtn {
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 1px solid var(--app-line);
+  border-radius: 0.6rem;
+  background: var(--app-surface);
+  color: var(--app-ink);
+  cursor: pointer;
+}
+
+.closeBtn:hover {
+  background: var(--app-surface-2);
+}
+
+.body {
+  padding: 1.35rem 1.45rem;
+  overflow-y: auto;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  padding: 1rem 1.45rem;
+  border-top: 1px solid var(--app-line);
+}

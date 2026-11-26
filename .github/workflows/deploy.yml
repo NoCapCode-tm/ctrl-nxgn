@@ -76,7 +76,7 @@ jobs:
             exit 1
           }
 
-          echo "Build output for admin.nexgn.cloud looks good"
+          echo "Build output for ctrl.nexgn.cloud looks good"
 
       - uses: actions/configure-pages@v5
 

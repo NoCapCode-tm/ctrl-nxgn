@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Ban,
   Download,
@@ -11,8 +11,9 @@ import {
   TicketPercent,
 } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
-import { adminService } from '@/services/admin.service'
 import { useToast } from '@/hooks/useAdminContexts'
+import { usePageReveal } from '@/hooks/usePageReveal'
+import { adminService } from '@/services/admin.service'
 import { formatDateTime, formatShortDate } from '@/utils/format'
 
 const DEFAULT_GEN_FORM = {
@@ -34,6 +35,7 @@ const DEFAULT_GEN_FORM = {
 
 export default function VouchersPage() {
   const { notify } = useToast()
+  const pageRef = useRef(null)
   const [tab, setTab] = useState('inventory')
 
   // Inventory state
@@ -127,6 +129,8 @@ export default function VouchersPage() {
     }, 0)
     return () => window.clearTimeout(id)
   }, [tab, loadInventory, loadCampaigns, loadRedemptions])
+
+  usePageReveal(pageRef, tab)
 
   const handlePresetAppSumo = () => {
     setGenResult(null)
@@ -222,7 +226,7 @@ export default function VouchersPage() {
   }
 
   return (
-    <div className="nx-page">
+    <div ref={pageRef} className="nx-page">
       {/* Top Action Strip */}
       <div className="nx-toolbar">
         <div className="nx-tabs" role="tablist">
@@ -289,7 +293,7 @@ export default function VouchersPage() {
 
       {/* TAB 1: INVENTORY */}
       {tab === 'inventory' && (
-        <section className="nx-card">
+        <section className="nx-card" data-anim="card">
           <div className="nx-card-header">
             <div className="nx-controls" style={{ flex: 1 }}>
               <input
@@ -301,7 +305,7 @@ export default function VouchersPage() {
                   setSearch(e.target.value)
                   setPage(1)
                 }}
-                style={{ minWidth: '15rem' }}
+                style={{ minWidth: '15em' }}
               />
               <select
                 className="nx-select"
@@ -450,7 +454,7 @@ export default function VouchersPage() {
 
       {/* TAB 2: CAMPAIGN ANALYTICS */}
       {tab === 'campaigns' && (
-        <section className="nx-card">
+        <section className="nx-card" data-anim="card">
           <div className="nx-card-header">
             <div>
               <h2 className="nx-card-title">Campaign Performance &amp; Kill-Switches</h2>
@@ -538,7 +542,7 @@ export default function VouchersPage() {
 
       {/* TAB 3: REDEMPTIONS & REFUNDS */}
       {tab === 'redemptions' && (
-        <section className="nx-card">
+        <section className="nx-card" data-anim="card">
           <div className="nx-card-header">
             <div className="nx-controls">
               <input
@@ -668,9 +672,9 @@ export default function VouchersPage() {
         open={genOpen}
         onClose={() => setGenOpen(false)}
         title="Generate Nexgn Redeem Codes"
-        width="46rem"
+        width="46em"
       >
-        <form onSubmit={handleGenerateSubmit} style={{ display: 'grid', gap: '1rem' }}>
+        <form onSubmit={handleGenerateSubmit} style={{ display: 'grid', gap: '1em' }}>
           <div className="nx-tabs">
             <button
               type="button"
@@ -806,7 +810,7 @@ export default function VouchersPage() {
                   type="number"
                   min="1"
                   className="nx-input"
-                  style={{ width: '7.5rem', height: '2.05rem' }}
+                  style={{ width: '7.5em', height: '2.2em' }}
                   value={genForm.durationDays}
                   onChange={(e) => setGenForm((f) => ({ ...f, durationDays: e.target.value }))}
                 />
@@ -816,15 +820,15 @@ export default function VouchersPage() {
 
           <div
             style={{
-              padding: '0.85rem 1rem',
-              borderRadius: '0.75rem',
+              padding: '0.85em 1em',
+              borderRadius: '0.75em',
               background: 'var(--app-surface-2)',
               border: '1px solid var(--app-line)',
               display: 'grid',
-              gap: '0.65rem',
+              gap: '0.65em',
             }}
           >
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', cursor: 'pointer', fontWeight: 600 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.55em', cursor: 'pointer', fontWeight: 600 }}>
               <input
                 type="checkbox"
                 checked={genForm.stackable}
@@ -885,17 +889,17 @@ export default function VouchersPage() {
           {genResult && (
             <div
               style={{
-                padding: '0.9rem 1rem',
-                borderRadius: '0.75rem',
+                padding: '0.9em 1em',
+                borderRadius: '0.75em',
                 background: 'var(--app-success-bg)',
                 color: 'var(--app-success)',
                 display: 'grid',
-                gap: '0.45rem',
+                gap: '0.45em',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5em' }}>
                 <strong>
-                  <Sparkles size={14} style={{ verticalAlign: 'middle', marginRight: '0.35rem' }} />
+                  <Sparkles size={14} style={{ verticalAlign: 'middle', marginRight: '0.35em' }} />
                   Generated {genResult.count} code(s) in "{genResult.campaign}"
                 </strong>
                 <button
@@ -908,14 +912,14 @@ export default function VouchersPage() {
                 </button>
               </div>
               {Array.isArray(genResult.sampleCodes) && (
-                <div className="nx-mono" style={{ fontSize: '0.8rem' }}>
+                <div className="nx-mono" style={{ fontSize: '0.82em' }}>
                   Sample: {genResult.sampleCodes.join(', ')}
                 </div>
               )}
             </div>
           )}
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.65rem', marginTop: '0.35rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.65em', marginTop: '0.35em' }}>
             <button type="button" className="nx-btn" onClick={() => setGenOpen(false)}>
               Close
             </button>
@@ -932,10 +936,10 @@ export default function VouchersPage() {
         open={Boolean(revokeTarget)}
         onClose={() => setRevokeTarget(null)}
         title="Revoke Redeemed Code (Refund Clawback)"
-        width="34rem"
+        width="34em"
       >
         {revokeTarget && (
-          <form onSubmit={handleRevokeConfirm} style={{ display: 'grid', gap: '1rem' }}>
+          <form onSubmit={handleRevokeConfirm} style={{ display: 'grid', gap: '1em' }}>
             <p className="nx-muted" style={{ margin: 0 }}>
               Revoking <strong className="nx-mono">{revokeTarget.code}</strong> marks the redemption
               as revoked and automatically downgrades the workspace (Stacked Business → Starter, or
@@ -950,7 +954,7 @@ export default function VouchersPage() {
                 required
               />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.65rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.65em' }}>
               <button type="button" className="nx-btn" onClick={() => setRevokeTarget(null)}>
                 Cancel
               </button>

@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { CheckCircle2, Download, RefreshCw } from 'lucide-react'
-import { adminService } from '@/services/admin.service'
 import { useToast } from '@/hooks/useAdminContexts'
+import { usePageReveal } from '@/hooks/usePageReveal'
+import { adminService } from '@/services/admin.service'
 import { formatDateTime, formatMoney } from '@/utils/format'
 
 export default function CompliancePage() {
   const { notify } = useToast()
+  const pageRef = useRef(null)
   const [tab, setTab] = useState('ledger')
   const [items, setItems] = useState([])
   const [taxType, setTaxType] = useState('all')
@@ -57,6 +59,8 @@ export default function CompliancePage() {
     return () => window.clearTimeout(id)
   }, [tab, loadLedger, loadWebhooks])
 
+  usePageReveal(pageRef, tab)
+
   const handleResolveLut = async (id) => {
     try {
       await adminService.resolveLutViolation(id, 'verified')
@@ -68,7 +72,7 @@ export default function CompliancePage() {
   }
 
   return (
-    <div className="nx-page">
+    <div ref={pageRef} className="nx-page">
       <div className="nx-toolbar">
         <div className="nx-tabs">
           <button
@@ -107,7 +111,7 @@ export default function CompliancePage() {
       </div>
 
       {tab === 'ledger' && (
-        <section className="nx-card">
+        <section className="nx-card" data-anim="card">
           <div className="nx-card-header">
             <div className="nx-controls">
               <input
@@ -248,7 +252,7 @@ export default function CompliancePage() {
 
       {tab === 'webhooks' && (
         <div className="nx-grid-2">
-          <section className="nx-card">
+          <section className="nx-card" data-anim="card">
             <div className="nx-card-header">
               <h2 className="nx-card-title">Recent Razorpay Webhooks</h2>
               <button type="button" className="nx-btn nx-btn-sm" onClick={loadWebhooks}>
@@ -283,7 +287,7 @@ export default function CompliancePage() {
             )}
           </section>
 
-          <section className="nx-card">
+          <section className="nx-card" data-anim="card">
             <div className="nx-card-header">
               <h2 className="nx-card-title">Halted / Grace-Period Subscriptions</h2>
             </div>

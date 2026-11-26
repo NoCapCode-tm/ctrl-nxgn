@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { KeyRound, RefreshCw, ShieldAlert, Trash2 } from 'lucide-react'
-import { adminService } from '@/services/admin.service'
 import { useAuth, useToast } from '@/hooks/useAdminContexts'
+import { usePageReveal } from '@/hooks/usePageReveal'
+import { adminService } from '@/services/admin.service'
 import { formatDateTime } from '@/utils/format'
 
 export default function SecurityPage() {
   const { admin, setAdmin } = useAuth()
   const { notify } = useToast()
+  const pageRef = useRef(null)
 
   const [radar, setRadar] = useState(null)
   const [sessions, setSessions] = useState([])
@@ -37,6 +39,8 @@ export default function SecurityPage() {
     }, 0)
     return () => window.clearTimeout(id)
   }, [load])
+
+  usePageReveal(pageRef, Boolean(radar))
 
   const handlePasswordChange = async (e) => {
     e.preventDefault()
@@ -75,9 +79,9 @@ export default function SecurityPage() {
   }
 
   return (
-    <div className="nx-page">
+    <div ref={pageRef} className="nx-page">
       <div className="nx-grid-2">
-        <section className="nx-card">
+        <section className="nx-card" data-anim="card">
           <div className="nx-card-header">
             <div>
               <h2 className="nx-card-title">Super Admin Credentials</h2>
@@ -88,11 +92,11 @@ export default function SecurityPage() {
             <KeyRound size={18} color="var(--app-brand)" />
           </div>
 
-          <div className="nx-muted" style={{ marginBottom: '1rem' }}>
+          <div className="nx-muted" style={{ marginBottom: '1em' }}>
             Last login: {formatDateTime(admin?.lastLoginAt)} · IP: {admin?.lastLoginIp || '—'}
           </div>
 
-          <form onSubmit={handlePasswordChange} style={{ display: 'grid', gap: '0.85rem' }}>
+          <form onSubmit={handlePasswordChange} style={{ display: 'grid', gap: '0.85em' }}>
             <div className="nx-field">
               <label className="nx-label">Current Password</label>
               <input
@@ -129,7 +133,7 @@ export default function SecurityPage() {
           </form>
         </section>
 
-        <section className="nx-card">
+        <section className="nx-card" data-anim="card">
           <div className="nx-card-header">
             <div>
               <h2 className="nx-card-title">Abuse &amp; Promo Farming Radar</h2>
@@ -140,29 +144,29 @@ export default function SecurityPage() {
             </button>
           </div>
 
-          <div style={{ display: 'grid', gap: '0.75rem' }}>
-            <div style={{ padding: '0.85rem', borderRadius: '0.75rem', background: 'var(--app-surface-2)' }}>
+          <div style={{ display: 'grid', gap: '0.75em' }}>
+            <div style={{ padding: '0.85em', borderRadius: '0.75em', background: 'var(--app-surface-2)' }}>
               <strong>Same-IP Redemption Clusters:</strong> {radar?.ipClusters?.length || 0}
               {radar?.ipClusters?.slice(0, 3).map((c) => (
-                <div key={c._id} className="nx-muted nx-mono" style={{ marginTop: '0.25rem' }}>
+                <div key={c._id} className="nx-muted nx-mono" style={{ marginTop: '0.25em' }}>
                   {c._id} · {c.redemptionCount} redemptions
                 </div>
               ))}
             </div>
 
-            <div style={{ padding: '0.85rem', borderRadius: '0.75rem', background: 'var(--app-surface-2)' }}>
+            <div style={{ padding: '0.85em', borderRadius: '0.75em', background: 'var(--app-surface-2)' }}>
               <strong>+Alias Signup Candidates:</strong> {radar?.aliasFarmCandidates?.length || 0}
               {radar?.aliasFarmCandidates?.slice(0, 3).map((u) => (
-                <div key={u._id} className="nx-muted nx-mono" style={{ marginTop: '0.25rem' }}>
+                <div key={u._id} className="nx-muted nx-mono" style={{ marginTop: '0.25em' }}>
                   {u.email}
                 </div>
               ))}
             </div>
 
-            <div style={{ padding: '0.85rem', borderRadius: '0.75rem', background: 'var(--app-surface-2)' }}>
+            <div style={{ padding: '0.85em', borderRadius: '0.75em', background: 'var(--app-surface-2)' }}>
               <strong>Active 2FA Account Lockouts:</strong> {radar?.blocked2faUsers?.length || 0}
               {radar?.blocked2faUsers?.slice(0, 3).map((u) => (
-                <div key={u._id} className="nx-muted" style={{ marginTop: '0.25rem' }}>
+                <div key={u._id} className="nx-muted" style={{ marginTop: '0.25em' }}>
                   {u.email} · {u.twoFAFailedAttempts} fails (until {formatDateTime(u.twoFABlockedUntil)})
                 </div>
               ))}
@@ -172,7 +176,7 @@ export default function SecurityPage() {
       </div>
 
       {/* LTD & Voucher Burn Leaderboard */}
-      <section className="nx-card">
+      <section className="nx-card" data-anim="card">
         <div className="nx-card-header">
           <div>
             <h2 className="nx-card-title">Voucher &amp; Lifetime Account Envelope Burn</h2>
@@ -218,7 +222,7 @@ export default function SecurityPage() {
       </section>
 
       {/* Active Customer Sessions */}
-      <section className="nx-card">
+      <section className="nx-card" data-anim="card">
         <div className="nx-card-header">
           <div>
             <h2 className="nx-card-title">Live Customer Sessions ({sessions.length})</h2>

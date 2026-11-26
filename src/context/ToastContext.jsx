@@ -23,14 +23,15 @@ export function ToastProvider({ children }) {
       <div
         aria-live="polite"
         style={{
+          fontSize: 'min(56px, max(14px, calc(100vw / 137.14)))',
           position: 'fixed',
-          bottom: '1.25rem',
-          right: '1.25rem',
+          bottom: '1.25em',
+          right: '1.25em',
           zIndex: 90,
           display: 'grid',
-          gap: '0.55rem',
-          maxWidth: '24rem',
-          width: 'calc(100vw - 2.5rem)',
+          gap: '0.55em',
+          maxWidth: '24em',
+          width: 'calc(100vw - 2.5em)',
           pointerEvents: 'none',
         }}
       >
@@ -42,18 +43,19 @@ export function ToastProvider({ children }) {
               pointerEvents: 'auto',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.65rem',
-              padding: '0.82rem 1rem',
-              borderRadius: '0.85rem',
+              gap: '0.65em',
+              padding: '0.85em 1.05em',
+              borderRadius: '0.85em',
               background: t.type === 'error' ? '#fef2f2' : '#101828',
               color: t.type === 'error' ? '#991b1b' : '#ffffff',
               border:
                 t.type === 'error'
                   ? '1px solid rgba(220, 38, 38, 0.25)'
                   : '1px solid rgba(255, 255, 255, 0.1)',
-              boxShadow: '0 14px 32px -8px rgba(16, 24, 40, 0.35)',
-              fontSize: '0.88rem',
+              boxShadow: '0 1em 2.3em -0.6em rgba(16, 24, 40, 0.35)',
+              fontSize: '0.9em',
               fontWeight: 500,
+              transition: 'transform 0.2s ease, opacity 0.2s ease',
             }}
           >
             {t.type === 'error' ? (
@@ -73,7 +75,7 @@ export function ToastProvider({ children }) {
                 cursor: 'pointer',
                 display: 'grid',
                 placeItems: 'center',
-                padding: '0.15rem',
+                padding: '0.15em',
               }}
             >
               <X size={15} />

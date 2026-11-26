@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   AlertTriangle,
@@ -10,8 +10,10 @@ import {
   TicketPercent,
   TrendingUp,
 } from 'lucide-react'
-import { adminService } from '@/services/admin.service'
+import StatCard from '@/components/ui/StatCard'
 import { useToast } from '@/hooks/useAdminContexts'
+import { usePageReveal } from '@/hooks/usePageReveal'
+import { adminService } from '@/services/admin.service'
 import { formatMoney } from '@/utils/format'
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -24,6 +26,8 @@ function pct(part, total) {
 export default function OverviewPage() {
   const { notify } = useToast()
   const navigate = useNavigate()
+  const pageRef = useRef(null)
+
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -46,6 +50,8 @@ export default function OverviewPage() {
     return () => window.clearTimeout(id)
   }, [load])
 
+  usePageReveal(pageRef, Boolean(data))
+
   const k = data?.kpis || {}
   const planMix = data?.planMix || { free: 0, starter: 0, business: 0 }
   const sourceMix = data?.sourceMix || { razorpay: 0, redeem_code: 0, admin_grant: 0, free: 0 }
@@ -58,7 +64,7 @@ export default function OverviewPage() {
   const conversionRate = pct(k.voucherToPaidConversions || 0, k.voucherUsersCount || 0)
 
   return (
-    <div className="nx-page">
+    <div ref={pageRef} className="nx-page">
       <div className="nx-toolbar">
         <div className="nx-controls">
           {k.lutComplianceAlerts > 0 && (
@@ -88,79 +94,72 @@ export default function OverviewPage() {
         </button>
       </div>
 
-      {/* KPI Strip */}
+      {/* Signature Notched Animated KPI Grid (scales from 320px phone to 3840px 4K) */}
       <div className="nx-kpi-grid">
         {revCurrencies.length === 0 ? (
-          <div className="nx-card">
-            <div className="nx-card-header" style={{ marginBottom: '0.4rem' }}>
-              <span className="nx-muted">Collected Revenue</span>
-              <IndianRupee size={17} color="var(--app-brand)" />
-            </div>
-            <div style={{ fontSize: '1.65rem', fontWeight: 800 }}>₹0</div>
-            <div className="nx-muted" style={{ marginTop: '0.25rem' }}>
-              No captured Razorpay payments yet
-            </div>
-          </div>
+          <StatCard
+            label="Collected Revenue"
+            value="₹0"
+            tag="INR"
+            sub="No captured Razorpay payments yet"
+            tone="brand"
+            Icon={IndianRupee}
+            loading={loading}
+            onClick={() => navigate('/compliance')}
+          />
         ) : (
           revCurrencies.map((row) => (
-            <div className="nx-card" key={row._id}>
-              <div className="nx-card-header" style={{ marginBottom: '0.4rem' }}>
-                <span className="nx-muted">Revenue ({row._id})</span>
-                <IndianRupee size={17} color="var(--app-brand)" />
-              </div>
-              <div style={{ fontSize: '1.65rem', fontWeight: 800 }}>
-                {formatMoney(row.grossAmount, row._id)}
-              </div>
-              <div className="nx-muted" style={{ marginTop: '0.25rem' }}>
-                Base: {formatMoney(row.baseAmount, row._id)} · GST: {formatMoney(row.taxAmount, row._id)} ({row.count} txns)
-              </div>
-            </div>
+            <StatCard
+              key={row._id}
+              label={`Revenue (${row._id})`}
+              value={formatMoney(row.grossAmount, row._id)}
+              tag={`${row.count} txns`}
+              sub={`Base ${formatMoney(row.baseAmount, row._id)} · GST ${formatMoney(row.taxAmount, row._id)}`}
+              tone="brand"
+              Icon={IndianRupee}
+              loading={loading}
+              onClick={() => navigate('/compliance')}
+            />
           ))
         )}
 
-        <div className="nx-card">
-          <div className="nx-card-header" style={{ marginBottom: '0.4rem' }}>
-            <span className="nx-muted">Workspaces &amp; Users</span>
-            <Building2 size={17} color="var(--app-info)" />
-          </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 800 }}>
-            {(k.totalWorkspaces || 0).toLocaleString()}
-          </div>
-          <div className="nx-muted" style={{ marginTop: '0.25rem' }}>
-            {k.totalUsers || 0} users · {k.activeSessions || 0} live sessions
-          </div>
-        </div>
+        <StatCard
+          label="Active Workspaces"
+          numericValue={k.totalWorkspaces || 0}
+          tag={`${k.activeSessions || 0} live`}
+          sub={`${k.totalUsers || 0} total workspace users`}
+          tone="total"
+          Icon={Building2}
+          loading={loading}
+          onClick={() => navigate('/workspaces')}
+        />
 
-        <div className="nx-card">
-          <div className="nx-card-header" style={{ marginBottom: '0.4rem' }}>
-            <span className="nx-muted">Envelopes &amp; Signatures</span>
-            <FileSignature size={17} color="var(--app-success)" />
-          </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 800 }}>
-            {(k.monthlyEnvelopes || 0).toLocaleString()}
-          </div>
-          <div className="nx-muted" style={{ marginTop: '0.25rem' }}>
-            This month · {k.signedDocuments || 0} / {k.totalDocuments || 0} completed overall
-          </div>
-        </div>
+        <StatCard
+          label="Monthly Envelopes"
+          numericValue={k.monthlyEnvelopes || 0}
+          tag={`${k.signedDocuments || 0} signed`}
+          sub={`Out of ${k.totalDocuments || 0} total documents`}
+          tone="signed"
+          Icon={FileSignature}
+          loading={loading}
+          onClick={() => navigate('/workspaces')}
+        />
 
-        <div className="nx-card">
-          <div className="nx-card-header" style={{ marginBottom: '0.4rem' }}>
-            <span className="nx-muted">Voucher Utilization &amp; LTD</span>
-            <TicketPercent size={17} color="var(--app-warn)" />
-          </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 800 }}>
-            {voucherTotals.totalRedeemed || 0} / {voucherTotals.totalSlots || 0}
-          </div>
-          <div className="nx-muted" style={{ marginTop: '0.25rem' }}>
-            {k.lifetimeWorkspaces || 0} Lifetime workspaces · {conversionRate}% paid conversion
-          </div>
-        </div>
+        <StatCard
+          label="Redeemed Vouchers"
+          numericValue={voucherTotals.totalRedeemed || 0}
+          tag={`${conversionRate}% paid`}
+          sub={`${k.lifetimeWorkspaces || 0} Lifetime · ${voucherTotals.totalSlots || 0} slots`}
+          tone="pending"
+          Icon={TicketPercent}
+          loading={loading}
+          onClick={() => navigate('/vouchers')}
+        />
       </div>
 
       {/* Breakdown Row */}
       <div className="nx-grid-2">
-        <section className="nx-card">
+        <section className="nx-card" data-anim="card">
           <div className="nx-card-header">
             <div>
               <h2 className="nx-card-title">Workspace Plan Mix</h2>
@@ -169,7 +168,7 @@ export default function OverviewPage() {
             <TrendingUp size={18} color="var(--app-muted)" />
           </div>
 
-          <div style={{ display: 'grid', gap: '0.9rem' }}>
+          <div style={{ display: 'grid', gap: '0.95em' }}>
             {[
               { label: 'Business Plan (Unlimited)', count: planMix.business, color: '#e50914' },
               { label: 'Starter Plan (49 / mo)', count: planMix.starter, color: '#2563eb' },
@@ -178,30 +177,53 @@ export default function OverviewPage() {
               const p = pct(item.count, totalPlans)
               return (
                 <div key={item.label}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem', marginBottom: '0.3rem' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      fontSize: '0.9em',
+                      marginBottom: '0.32em',
+                    }}
+                  >
                     <span style={{ fontWeight: 600 }}>{item.label}</span>
-                    <span className="nx-mono">{item.count} ({p}%)</span>
+                    <span className="nx-mono">
+                      {item.count} ({p}%)
+                    </span>
                   </div>
-                  <div style={{ height: '0.55rem', borderRadius: '999px', background: 'var(--app-surface-2)', overflow: 'hidden' }}>
-                    <div style={{ width: `${p}%`, height: '100%', background: item.color, borderRadius: '999px' }} />
+                  <div className="nx-bar-track">
+                    <div
+                      className="nx-bar-fill"
+                      style={{ width: `${p}%`, background: item.color }}
+                    />
                   </div>
                 </div>
               )
             })}
           </div>
 
-          <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--app-line)', display: 'flex', flexWrap: 'wrap', gap: '0.6rem' }}>
+          <div
+            style={{
+              marginTop: '1.25em',
+              paddingTop: '1em',
+              borderTop: '1px solid var(--app-line)',
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '0.55em',
+            }}
+          >
             <span className="nx-badge nx-badge-info">Razorpay Paid: {sourceMix.razorpay}</span>
             <span className="nx-badge nx-badge-warn">Voucher / AppSumo: {sourceMix.redeem_code}</span>
             <span className="nx-badge nx-badge-neutral">Admin Grants: {sourceMix.admin_grant}</span>
           </div>
         </section>
 
-        <section className="nx-card">
+        <section className="nx-card" data-anim="card">
           <div className="nx-card-header">
             <div>
               <h2 className="nx-card-title">GST Breakdown by Regime</h2>
-              <p className="nx-card-sub">Server-verified UP CGST/SGST vs Inter-State IGST vs 0% Export LUT</p>
+              <p className="nx-card-sub">
+                Server-verified UP CGST/SGST vs Inter-State IGST vs 0% Export LUT
+              </p>
             </div>
             <ShieldCheck size={18} color="var(--app-muted)" />
           </div>
@@ -240,7 +262,7 @@ export default function OverviewPage() {
       </div>
 
       {/* 6-Month Revenue Table */}
-      <section className="nx-card">
+      <section className="nx-card" data-anim="card">
         <div className="nx-card-header">
           <div>
             <h2 className="nx-card-title">Monthly Revenue Ledger (Last 6 Months)</h2>

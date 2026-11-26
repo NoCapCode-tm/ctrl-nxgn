@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   Building2,
@@ -12,12 +12,18 @@ import {
   ShieldAlert,
   Sun,
   TicketPercent,
+  X,
 } from 'lucide-react'
+import { gsap } from 'gsap'
+import { useGSAP } from '@gsap/react'
 import logoUrl from '@/assets/logo.svg'
 import compactLogoUrl from '@/assets/compact-logo.svg'
 import { useAuth, useTheme, useToast } from '@/hooks/useAdminContexts'
 import { adminService } from '@/services/admin.service'
+import { prefersReducedMotion } from '@/utils/motion'
 import styles from './AdminLayout.module.css'
+
+gsap.registerPlugin(useGSAP)
 
 const ROUTE_META = {
   '/overview': {
@@ -49,9 +55,24 @@ export default function AdminLayout() {
   const location = useLocation()
   const navigate = useNavigate()
 
+  const shellRef = useRef(null)
+  const sidebarRef = useRef(null)
+  const navRef = useRef(null)
+  const pillRef = useRef(null)
+  const stageRef = useRef(null)
+  const placedRef = useRef(false)
+
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
   const [alerts, setAlerts] = useState({ lutComplianceAlerts: 0, haltedSubscriptions: 0 })
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -70,6 +91,126 @@ export default function AdminLayout() {
     }
   }, [location.pathname])
 
+  // Slide active dark pill smoothly across sidebar nav links
+  const placePill = useCallback((animate) => {
+    const nav = navRef.current
+    const pill = pillRef.current
+    if (!nav || !pill) return
+    const activeLink = nav.querySelector('[aria-current="page"]')
+    if (!activeLink) {
+      gsap.to(pill, { autoAlpha: 0, duration: 0.2 })
+      return
+    }
+    const target = {
+      x: activeLink.offsetLeft,
+      y: activeLink.offsetTop,
+      width: activeLink.offsetWidth,
+      height: activeLink.offsetHeight,
+      autoAlpha: 1,
+    }
+    if (!animate || prefersReducedMotion()) {
+      gsap.set(pill, target)
+    } else {
+      gsap.to(pill, {
+        ...target,
+        duration: 0.48,
+        ease: 'power3.inOut',
+        overwrite: 'auto',
+      })
+    }
+  }, [])
+
+  useGSAP(
+    () => {
+      placePill(placedRef.current)
+      placedRef.current = true
+    },
+    { scope: navRef, dependencies: [location.pathname, collapsed, mobileOpen] },
+  )
+
+  useEffect(() => {
+    const nav = navRef.current
+    if (!nav || typeof ResizeObserver === 'undefined') return undefined
+    const ro = new ResizeObserver(() => placePill(false))
+    ro.observe(nav)
+    return () => ro.disconnect()
+  }, [placePill])
+
+  // Desktop sidebar entrance
+  useGSAP(
+    () => {
+      const mm = gsap.matchMedia()
+      mm.add('(min-width: 1024px) and (prefers-reduced-motion: no-preference)', () => {
+        gsap.fromTo(
+          sidebarRef.current,
+          { x: -24, autoAlpha: 0 },
+          {
+            x: 0,
+            autoAlpha: 1,
+            duration: 0.75,
+            ease: 'expo.out',
+            clearProps: 'transform,opacity,visibility',
+          },
+        )
+        gsap.fromTo(
+          '[data-nav-item]',
+          { x: -10, autoAlpha: 0 },
+          {
+            x: 0,
+            autoAlpha: 1,
+            duration: 0.45,
+            stagger: 0.04,
+            delay: 0.16,
+            ease: 'power3.out',
+            clearProps: 'transform,opacity,visibility',
+          },
+        )
+      })
+      return () => mm.revert()
+    },
+    { scope: sidebarRef },
+  )
+
+  // Mobile drawer item stagger
+  useGSAP(
+    () => {
+      if (!mobileOpen || prefersReducedMotion()) return
+      gsap.fromTo(
+        '[data-nav-item]',
+        { x: -16, autoAlpha: 0 },
+        {
+          x: 0,
+          autoAlpha: 1,
+          duration: 0.4,
+          stagger: 0.04,
+          delay: 0.08,
+          ease: 'power3.out',
+          clearProps: 'transform,opacity,visibility',
+        },
+      )
+    },
+    { scope: sidebarRef, dependencies: [mobileOpen] },
+  )
+
+  // Smooth route stage transition
+  useGSAP(
+    () => {
+      if (prefersReducedMotion() || !stageRef.current) return
+      gsap.fromTo(
+        stageRef.current,
+        { y: 14, autoAlpha: 0 },
+        {
+          y: 0,
+          autoAlpha: 1,
+          duration: 0.48,
+          ease: 'power3.out',
+          clearProps: 'transform,opacity,visibility',
+        },
+      )
+    },
+    { scope: shellRef, dependencies: [location.pathname] },
+  )
+
   const meta = ROUTE_META[location.pathname] || ROUTE_META['/overview']
   const complianceCount = alerts.lutComplianceAlerts + alerts.haltedSubscriptions
 
@@ -80,63 +221,90 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className={styles.shell} data-collapsed={collapsed ? 'true' : 'false'}>
-      {mobileOpen && (
-        <div className={styles.backdrop} onClick={() => setMobileOpen(false)} />
-      )}
+    <div
+      ref={shellRef}
+      className={styles.shell}
+      data-collapsed={collapsed ? 'true' : 'false'}
+    >
+      <div
+        className={styles.backdrop}
+        data-open={mobileOpen ? 'true' : 'false'}
+        onClick={() => setMobileOpen(false)}
+      />
 
-      <aside className={styles.sidebar} data-open={mobileOpen ? 'true' : 'false'}>
+      <aside
+        ref={sidebarRef}
+        className={styles.sidebar}
+        data-open={mobileOpen ? 'true' : 'false'}
+      >
         <div className={styles.sideHead}>
-          <NavLink to="/overview" className={styles.brandLink}>
-            {collapsed ? (
-              <img src={compactLogoUrl} alt="Nexgn" style={{ width: '2rem', height: '2rem' }} />
-            ) : (
-              <>
-                <img src={logoUrl} alt="Nexgn" className={styles.brandText} />
-                <span className={styles.adminPill}>Admin</span>
-              </>
-            )}
-          </NavLink>
+          {collapsed ? (
+            <button
+              type="button"
+              className={styles.markBtn}
+              onClick={() => setCollapsed(false)}
+              aria-label="Expand sidebar"
+            >
+              <span className={styles.mark}>
+                <img src={compactLogoUrl} alt="Nexgn" />
+              </span>
+              <PanelLeftOpen className={styles.markArrow} aria-hidden="true" />
+            </button>
+          ) : (
+            <NavLink to="/overview" className={styles.brandLink}>
+              <img src={logoUrl} alt="Nexgn" className={styles.brandText} />
+              <span className={styles.adminPill}>Admin</span>
+            </NavLink>
+          )}
+
+          {!collapsed && (
+            <button
+              type="button"
+              className={styles.collapseBtn}
+              onClick={() => setCollapsed(true)}
+              aria-label="Collapse sidebar"
+            >
+              <PanelLeftClose />
+            </button>
+          )}
+
           <button
             type="button"
-            className={styles.collapseBtn}
-            onClick={() => setCollapsed((c) => !c)}
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className={styles.drawerClose}
+            onClick={() => setMobileOpen(false)}
+            aria-label="Close navigation menu"
           >
-            {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+            <X />
           </button>
         </div>
 
-        <nav className={styles.nav} aria-label="Super Admin Navigation" onClick={() => setMobileOpen(false)}>
+        <nav
+          ref={navRef}
+          className={styles.nav}
+          aria-label="Super Admin Navigation"
+          onClick={() => setMobileOpen(false)}
+        >
+          <div ref={pillRef} className={styles.indicator} aria-hidden="true" />
+
           {!collapsed && <span className={styles.navGroupLabel}>Platform Control</span>}
 
-          <NavLink
-            to="/overview"
-            className={({ isActive }) =>
-              `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
-            }
-          >
-            <LayoutDashboard size={18} />
+          <NavLink to="/overview" className={styles.navLink} data-nav-item data-tip="Overview">
+            <LayoutDashboard />
             {!collapsed && <span>Overview</span>}
           </NavLink>
 
           <NavLink
             to="/vouchers"
-            className={({ isActive }) =>
-              `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
-            }
+            className={styles.navLink}
+            data-nav-item
+            data-tip="Vouchers & AppSumo"
           >
-            <TicketPercent size={18} />
+            <TicketPercent />
             {!collapsed && <span>Vouchers &amp; AppSumo</span>}
           </NavLink>
 
-          <NavLink
-            to="/workspaces"
-            className={({ isActive }) =>
-              `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
-            }
-          >
-            <Building2 size={18} />
+          <NavLink to="/workspaces" className={styles.navLink} data-nav-item data-tip="Workspaces">
+            <Building2 />
             {!collapsed && <span>Workspaces</span>}
           </NavLink>
 
@@ -144,11 +312,11 @@ export default function AdminLayout() {
 
           <NavLink
             to="/compliance"
-            className={({ isActive }) =>
-              `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
-            }
+            className={styles.navLink}
+            data-nav-item
+            data-tip="GST & Webhooks"
           >
-            <ReceiptIndianRupee size={18} />
+            <ReceiptIndianRupee />
             {!collapsed && (
               <>
                 <span>GST &amp; Webhooks</span>
@@ -161,11 +329,11 @@ export default function AdminLayout() {
 
           <NavLink
             to="/security"
-            className={({ isActive }) =>
-              `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
-            }
+            className={styles.navLink}
+            data-nav-item
+            data-tip="Abuse & Security"
           >
-            <ShieldAlert size={18} />
+            <ShieldAlert />
             {!collapsed && <span>Abuse &amp; Security</span>}
           </NavLink>
         </nav>
@@ -197,7 +365,7 @@ export default function AdminLayout() {
       </aside>
 
       <main className={styles.main}>
-        <header className={styles.topbar}>
+        <header className={styles.topbar} data-scrolled={scrolled ? 'true' : 'false'}>
           <div className={styles.topLeft}>
             <button
               type="button"
@@ -205,9 +373,9 @@ export default function AdminLayout() {
               onClick={() => setMobileOpen(true)}
               aria-label="Open menu"
             >
-              <Menu size={18} />
+              <Menu />
             </button>
-            <div>
+            <div style={{ minWidth: 0 }}>
               <h1 className={styles.pageTitle}>{meta.title}</h1>
               <p className={styles.pageSub}>{meta.subtitle}</p>
             </div>
@@ -221,7 +389,7 @@ export default function AdminLayout() {
               aria-label="Toggle color theme"
               title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             >
-              {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+              {theme === 'dark' ? <Sun /> : <Moon />}
             </button>
           </div>
         </header>
@@ -242,7 +410,9 @@ export default function AdminLayout() {
           </div>
         )}
 
-        <Outlet />
+        <div ref={stageRef}>
+          <Outlet />
+        </div>
       </main>
     </div>
   )

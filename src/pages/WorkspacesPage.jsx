@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Eye, LogOut, RefreshCw, SlidersHorizontal } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
-import { adminService } from '@/services/admin.service'
 import { useToast } from '@/hooks/useAdminContexts'
+import { usePageReveal } from '@/hooks/usePageReveal'
+import { adminService } from '@/services/admin.service'
 import { formatDateTime, formatMoney, formatShortDate } from '@/utils/format'
 
 export default function WorkspacesPage() {
   const { notify } = useToast()
+  const pageRef = useRef(null)
   const [items, setItems] = useState([])
   const [search, setSearch] = useState('')
   const [plan, setPlan] = useState('all')
@@ -51,6 +53,8 @@ export default function WorkspacesPage() {
     }, 0)
     return () => window.clearTimeout(id)
   }, [load])
+
+  usePageReveal(pageRef, items.length > 0)
 
   const openInspector = async (teamId) => {
     try {
@@ -101,8 +105,8 @@ export default function WorkspacesPage() {
   }
 
   return (
-    <div className="nx-page">
-      <section className="nx-card">
+    <div ref={pageRef} className="nx-page">
+      <section className="nx-card" data-anim="card">
         <div className="nx-card-header">
           <div className="nx-controls">
             <input
@@ -114,7 +118,7 @@ export default function WorkspacesPage() {
                 setSearch(e.target.value)
                 setPage(1)
               }}
-              style={{ minWidth: '17rem' }}
+              style={{ minWidth: '17em' }}
             />
             <select
               className="nx-select"
@@ -239,11 +243,11 @@ export default function WorkspacesPage() {
         open={Boolean(detail)}
         onClose={() => setDetail(null)}
         title={detail?.team?.company_name ? `${detail.team.company_name} (${detail.team.org_id})` : 'Workspace Detail'}
-        width="50rem"
+        width="50em"
       >
         {detail && (
-          <div style={{ display: 'grid', gap: '1.15rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.65rem' }}>
+          <div style={{ display: 'grid', gap: '1.15em' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.65em' }}>
               <div>
                 <div style={{ fontWeight: 700 }}>{detail.team?.owner?.name}</div>
                 <div className="nx-muted">{detail.team?.owner?.email}</div>
@@ -259,17 +263,17 @@ export default function WorkspacesPage() {
             </div>
 
             <div className="nx-grid-2">
-              <div className="nx-card" style={{ padding: '0.9rem' }}>
-                <div style={{ fontWeight: 700, marginBottom: '0.35rem' }}>Usage &amp; Tax Profile</div>
+              <div className="nx-card" style={{ padding: '0.9em' }}>
+                <div style={{ fontWeight: 700, marginBottom: '0.35em' }}>Usage &amp; Tax Profile</div>
                 <div className="nx-muted">Monthly Envelopes: {detail.usage?.monthlyEnvelopes ?? 0}</div>
                 <div className="nx-muted">Total Documents: {detail.usage?.totalDocuments ?? 0}</div>
                 <div className="nx-muted">State: {detail.taxProfile?.state || 'Uttar Pradesh'}</div>
                 <div className="nx-muted nx-mono">GSTIN: {detail.taxProfile?.gstin || '—'}</div>
               </div>
-              <div className="nx-card" style={{ padding: '0.9rem' }}>
-                <div style={{ fontWeight: 700, marginBottom: '0.35rem' }}>Team Members ({detail.members?.length || 0})</div>
+              <div className="nx-card" style={{ padding: '0.9em' }}>
+                <div style={{ fontWeight: 700, marginBottom: '0.35em' }}>Team Members ({detail.members?.length || 0})</div>
                 {(detail.members || []).map((m) => (
-                  <div key={m._id} style={{ fontSize: '0.84rem', marginBottom: '0.2rem' }}>
+                  <div key={m._id} style={{ fontSize: '0.86em', marginBottom: '0.2em' }}>
                     <strong>{m.email}</strong> · {m.role} · {m.status}
                   </div>
                 ))}
@@ -277,7 +281,7 @@ export default function WorkspacesPage() {
             </div>
 
             <div>
-              <div style={{ fontWeight: 700, marginBottom: '0.45rem' }}>Recent Payments &amp; Receipts</div>
+              <div style={{ fontWeight: 700, marginBottom: '0.45em' }}>Recent Payments &amp; Receipts</div>
               {detail.payments?.length === 0 ? (
                 <div className="nx-muted">No payment rows.</div>
               ) : (
@@ -316,10 +320,10 @@ export default function WorkspacesPage() {
         open={Boolean(editTarget)}
         onClose={() => setEditTarget(null)}
         title={editTarget ? `Support Controls · ${editTarget.companyName}` : 'Manage Workspace'}
-        width="38rem"
+        width="38em"
       >
         {editTarget && (
-          <form onSubmit={handleSaveEdit} style={{ display: 'grid', gap: '1rem' }}>
+          <form onSubmit={handleSaveEdit} style={{ display: 'grid', gap: '1em' }}>
             <div className="nx-grid-2">
               <div className="nx-field">
                 <label className="nx-label">Plan Override</label>

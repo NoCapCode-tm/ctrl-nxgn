@@ -1,0 +1,208 @@
+.total {
+  --accent: #fee6ad;
+  --accent-tab: #fddd94;
+  --glyph: #2563eb;
+  --icon-bg: #eef4ff;
+  --ink: #5c4a14;
+}
+
+.signed {
+  --accent: #cdf0da;
+  --accent-tab: #bbe9cc;
+  --glyph: #15803d;
+  --icon-bg: #ecfdf3;
+  --ink: #14532d;
+}
+
+.pending {
+  --accent: #ffddb8;
+  --accent-tab: #ffd0a0;
+  --glyph: #b45309;
+  --icon-bg: #fff5eb;
+  --ink: #6b3f12;
+}
+
+.brand {
+  --accent: #fdd3d3;
+  --accent-tab: #fbc0c0;
+  --glyph: #dc2626;
+  --icon-bg: #fef2f2;
+  --ink: #7f1d1d;
+}
+
+.card {
+  container-type: inline-size;
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--app-ink);
+  font: inherit;
+  text-align: left;
+  border-radius: 1.15em;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.clickable:active {
+  scale: 0.985;
+}
+
+.inner {
+  position: relative;
+  display: block;
+  width: 100%;
+  font-size: clamp(11px, 5.2cqi, 18px);
+  height: 11.4em;
+  border-radius: 1.15em;
+}
+
+.back {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 1.15em;
+  background: var(--app-surface);
+  border: 1px solid var(--app-line);
+  box-shadow: var(--card-shadow);
+  transition: box-shadow 0.35s ease, border-color 0.25s ease;
+}
+
+.fillTab {
+  position: absolute;
+  inset: 0;
+  background: var(--accent-tab);
+  clip-path: circle(0% at 100% 0%);
+  pointer-events: none;
+}
+
+.badgeSlot {
+  position: absolute;
+  top: 0.15em;
+  right: 1em;
+  height: 2.9em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22em;
+  font-size: 0.86em;
+  font-weight: 700;
+  color: var(--app-muted);
+  white-space: nowrap;
+  z-index: 2;
+}
+
+.card[data-active='true'] .badgeSlot {
+  color: var(--ink);
+}
+
+.shadow {
+  position: absolute;
+  inset: 0;
+  display: block;
+  filter: drop-shadow(0 -1px 2px rgba(15, 23, 42, 0.05));
+}
+
+.body {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1.65em 1.25em 1.25em 1.3em;
+  overflow: hidden;
+  background: rgb(253, 247, 244);
+  clip-path: inset(0.42em 0 0 0 round 1.15em);
+}
+
+:global(html[data-theme='dark']) .body {
+  background: #171b26;
+}
+
+:global(html[data-theme='dark']) .card[data-active='true'] .label,
+:global(html[data-theme='dark']) .card[data-active='true'] .value,
+:global(html[data-theme='dark']) .card[data-active='true'] .sub,
+:global(html[data-theme='dark']) .card[data-active='true'] .badgeSlot {
+  color: #101828;
+}
+
+.fillBody {
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  clip-path: circle(0% at 100% 0%);
+  pointer-events: none;
+}
+
+.icon,
+.mid,
+.sub {
+  position: relative;
+  z-index: 1;
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 2.45em;
+  height: 2.45em;
+  border-radius: 0.65em;
+  background: var(--icon-bg);
+}
+
+.glyph {
+  width: 1.3em;
+  height: 1.3em;
+  color: var(--glyph);
+  stroke-width: 1.9;
+}
+
+.mid {
+  width: 100%;
+}
+
+.value {
+  font-size: 2.05em;
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  color: var(--app-ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.label {
+  margin-top: 0.25em;
+  color: var(--app-muted);
+  font-size: 0.98em;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.3s ease;
+}
+
+.sub {
+  width: 100%;
+  color: var(--app-muted);
+  font-size: 0.8em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.3s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .back,
+  .label,
+  .sub {
+    transition: none;
+  }
+}

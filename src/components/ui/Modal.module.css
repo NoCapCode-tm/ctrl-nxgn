@@ -2,13 +2,14 @@
   position: fixed;
   inset: 0;
   z-index: 75;
+  font-size: min(56px, max(14px, calc(100vw / 137.14)));
 }
 
 .backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(10, 15, 25, 0.35);
-  backdrop-filter: blur(2px);
+  background: rgba(10, 15, 25, 0.38);
+  backdrop-filter: blur(3px);
 }
 
 .frame {
@@ -16,65 +17,114 @@
   inset: 0;
   display: grid;
   place-items: center;
-  padding: 1.25rem;
+  padding: 1.4em;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .panel {
   position: relative;
   display: flex;
   flex-direction: column;
-  width: min(44rem, 100%);
-  max-height: calc(100dvh - 2.5rem);
+  width: min(var(--modal-w, 44em), 100%);
+  max-height: calc(100dvh - 2.8em);
   overflow: hidden;
-  border-radius: 1.25rem;
+  border-radius: 1.35em;
   background: var(--app-surface);
   color: var(--app-ink);
   border: 1px solid var(--app-line);
-  box-shadow: 0 28px 60px -16px rgba(16, 24, 40, 0.4);
+  box-shadow: 0 2.5em 5.5em -1.6em rgba(16, 24, 40, 0.42);
 }
 
 .header {
   display: flex;
+  flex: none;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  padding: 1.1rem 1.45rem;
+  gap: 1em;
+  padding: 1.15em 1.45em;
   border-bottom: 1px solid var(--app-line);
 }
 
 .title {
   margin: 0;
-  font-size: 1.15rem;
+  font-size: 1.22em;
   font-weight: 700;
+  min-width: 0;
 }
 
 .closeBtn {
   display: grid;
   place-items: center;
-  width: 2.2rem;
-  height: 2.2rem;
-  border: 1px solid var(--app-line);
-  border-radius: 0.6rem;
+  flex: none;
+  width: 2.35em;
+  height: 2.35em;
+  border: 1px solid var(--app-line-strong);
+  border-radius: 0.65em;
   background: var(--app-surface);
   color: var(--app-ink);
   cursor: pointer;
+  transition: background-color 0.18s;
+}
+
+.closeBtn svg {
+  width: 1.2em;
+  height: 1.2em;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .closeBtn:hover {
   background: var(--app-surface-2);
 }
 
+.closeBtn:hover svg {
+  transform: rotate(90deg);
+}
+
 .body {
-  padding: 1.35rem 1.45rem;
+  padding: 1.35em 1.45em;
   overflow-y: auto;
 }
 
 .footer {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.65rem;
-  padding: 1rem 1.45rem;
+  gap: 0.65em;
+  padding: 1em 1.45em;
   border-top: 1px solid var(--app-line);
+}
+
+@media (max-width: 1023px) {
+  .root {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 560px) {
+  .frame {
+    align-items: end;
+    padding: 0;
+  }
+
+  .panel {
+    width: 100% !important;
+    max-height: 92dvh;
+    border-radius: 1.35em 1.35em 0 0;
+  }
+
+  .header {
+    padding: 1em 1.1em;
+  }
+
+  .body {
+    padding: 1.1em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .closeBtn svg {
+    transition: none;
+  }
 }

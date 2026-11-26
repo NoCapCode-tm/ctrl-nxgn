@@ -27,7 +27,10 @@ export default defineConfig({
             return 'react-vendor'
           }
           if (normalized.includes('/lucide-react/')) return 'icons'
+<<<<<<< HEAD
           if (normalized.includes('/gsap/') || normalized.includes('/@gsap/')) return 'gsap'
+=======
+>>>>>>> origin/main
           if (normalized.includes('/axios/')) return 'http'
         },
       },

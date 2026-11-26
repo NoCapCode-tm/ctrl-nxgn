@@ -18,12 +18,17 @@ function downloadBlob(data, filename, mimeType = 'text/csv;charset=utf-8;') {
 
 export const adminService = {
   // Auth
+<<<<<<< HEAD
   login: async ({ identifier, password, remember = false }) => {
     const res = await apiClient.post('/superadmin/auth/login', {
       identifier,
       password,
       remember,
     })
+=======
+  login: async ({ identifier, password }) => {
+    const res = await apiClient.post('/superadmin/auth/login', { identifier, password })
+>>>>>>> origin/main
     return unwrapData(res).admin
   },
 

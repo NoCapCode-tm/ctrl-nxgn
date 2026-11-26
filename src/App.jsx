@@ -1,6 +1,9 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import AdminLayout from '@/components/layout/AdminLayout'
+<<<<<<< HEAD
 import AuthLayout from '@/components/layout/AuthLayout'
+=======
+>>>>>>> origin/main
 import { AuthProvider } from '@/context/AuthContext'
 import { ThemeProvider } from '@/context/ThemeContext'
 import { ToastProvider } from '@/context/ToastContext'
@@ -38,6 +41,7 @@ export default function App() {
           <BrowserRouter>
             <Routes>
               <Route
+<<<<<<< HEAD
                 element={
                   <GuestRoute>
                     <AuthLayout />
@@ -46,6 +50,15 @@ export default function App() {
               >
                 <Route path="/login" element={<LoginPage />} />
               </Route>
+=======
+                path="/login"
+                element={
+                  <GuestRoute>
+                    <LoginPage />
+                  </GuestRoute>
+                }
+              />
+>>>>>>> origin/main
 
               <Route
                 element={

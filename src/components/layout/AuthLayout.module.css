@@ -1,0 +1,206 @@
+/*===== Tokens (light only, matches Nexgn Sign auth shell) ============ */
+.root {
+  --auth-surface: #ffffff;
+  --auth-surface-2: #f5f6f8;
+  --auth-text: #0b0b10;
+  --auth-muted: #636b79;
+  --auth-border: #d3d7de;
+  --auth-border-strong: #a3a9b6;
+  --auth-brand: #f20f1b;
+  --auth-brand-hover: #d70914;
+  --auth-focus: rgba(242, 15, 27, 0.2);
+  --auth-danger: #d92d20;
+  --auth-danger-bg: rgba(217, 45, 32, 0.08);
+
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 1.2em;
+  overflow-x: clip;
+  background: #16212c;
+  color: var(--auth-text);
+  font-family: 'DM Sans Variable', 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  font-size: clamp(13px, min(1.7vh, 1.1vw), 56px);
+}
+
+.root,
+.root *,
+.root *::before,
+.root *::after {
+  box-sizing: border-box;
+}
+
+.bgWrap {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.bg {
+  position: absolute;
+  inset: -3%;
+  background: url('/brand/auth-bg.webp') center / cover no-repeat;
+  will-change: transform;
+}
+
+.bgShade {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 90% at 50% 40%, transparent 45%, rgba(6, 12, 20, 0.28) 100%);
+}
+
+.card {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 0.96fr) minmax(0, 1fr);
+  width: min(100%, 57em);
+  min-height: 50.6em;
+  padding: 0.8em;
+  border-radius: 1.3em;
+  background: var(--auth-surface);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 3em 7em -2em rgba(5, 10, 18, 0.55);
+  transition:
+    min-height 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0.4em 2.2em 1.4em 3.35em;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1em;
+  height: 2.4em;
+}
+
+.logo {
+  display: inline-flex;
+  height: 100%;
+}
+
+.logo img {
+  display: block;
+  height: 100%;
+  width: auto;
+}
+
+.portalBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  height: 2.2em;
+  padding: 0 0.85em;
+  border-radius: 999px;
+  background: rgba(242, 15, 27, 0.08);
+  border: 1px solid rgba(242, 15, 27, 0.2);
+  color: #d70914;
+  font-size: 0.78em;
+  font-weight: 700;
+}
+
+.content {
+  flex: 1;
+  display: grid;
+  align-content: start;
+  padding-top: 3.4em;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1.35em;
+  margin-top: auto;
+  padding-top: 1.4em;
+}
+
+.footerLink {
+  font-size: 0.78em;
+  line-height: 1.4;
+  color: var(--auth-muted);
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
+  text-decoration-color: rgba(99, 107, 121, 0.45);
+  transition: color 0.18s ease, text-decoration-color 0.18s ease;
+}
+
+.footerLink:hover,
+.footerLink:focus-visible {
+  color: var(--auth-text);
+  text-decoration-color: var(--auth-text);
+}
+
+@media (max-width: 900px) {
+  .root {
+    font-size: 16px;
+    padding: 1.5em;
+    align-items: start;
+  }
+
+  .card {
+    grid-template-columns: minmax(0, 1fr);
+    width: min(100%, 31em);
+    min-height: 0;
+    margin-inline: auto;
+  }
+
+  .main {
+    padding: 1.4em 1.4em 1.6em;
+  }
+
+  .content {
+    padding-top: 1.6em;
+  }
+
+  .footer {
+    padding-top: 1.8em;
+  }
+}
+
+@media (max-width: 560px) {
+  .root {
+    padding: 0.9em;
+  }
+
+  .card {
+    width: 100%;
+    padding: 0.6em;
+    border-radius: 1.4em;
+  }
+
+  .main {
+    padding: 1.3em 0.9em 1.4em;
+  }
+
+  .footer {
+    gap: 1em;
+  }
+}
+
+@media (max-width: 360px) {
+  .root {
+    font-size: 15px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .footerLink {
+    transition: none;
+  }
+}

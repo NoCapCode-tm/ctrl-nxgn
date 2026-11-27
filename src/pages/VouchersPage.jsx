@@ -1,14 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Ban,
+  Check,
+  Copy,
   Download,
   Layers,
+  Pencil,
   Plus,
   Power,
   RefreshCw,
   RotateCcw,
   Sparkles,
   TicketPercent,
+  Trash2,
 } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 import { useToast } from '@/hooks/useAdminContexts'
@@ -68,7 +72,26 @@ export default function VouchersPage() {
   // Refund revocation modal
   const [revokeTarget, setRevokeTarget] = useState(null)
   const [revokeReason, setRevokeReason] = useState('AppSumo 60-day refund processed')
+  const [revokeDisableVoucher, setRevokeDisableVoucher] = useState(true)
   const [revoking, setRevoking] = useState(false)
+
+  // Selection, Copy, Export, Edit & Delete state
+  const [selectedIds, setSelectedIds] = useState(() => new Set())
+  const [copiedCode, setCopiedCode] = useState('')
+  const [exportUnredeemedOnly, setExportUnredeemedOnly] = useState(true)
+  const [editTarget, setEditTarget] = useState(null)
+  const [editForm, setEditForm] = useState({
+    targetPlan: 'starter',
+    isLifetime: false,
+    durationDays: 90,
+    maxRedemptions: 1,
+    expiresAt: '',
+    active: true,
+    notes: '',
+  })
+  const [savingEdit, setSavingEdit] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
   const loadInventory = useCallback(async () => {
     setLoading(true)
@@ -82,6 +105,7 @@ export default function VouchersPage() {
         status: statusFilter,
       })
       setVouchers(res.items || [])
+      setSelectedIds(new Set())
       setTotalPages(res.totalPages || 1)
       if (Array.isArray(res.campaigns)) setCampaigns(res.campaigns)
     } catch (err) {
@@ -206,18 +230,133 @@ export default function VouchersPage() {
     }
   }
 
+  const copyCode = async (code) => {
+    try {
+      await navigator.clipboard.writeText(code)
+      setCopiedCode(code)
+      notify(`Copied ${code}`)
+      window.setTimeout(() => setCopiedCode((prev) => (prev === code ? '' : prev)), 1500)
+    } catch {
+      notify('Unable to copy to clipboard', 'error')
+    }
+  }
+
+  const getVoucherStatusBadge = (v) => {
+    if (!v.active) return <span className="nx-badge nx-badge-danger">Disabled</span>
+    if (v.expiresAt && new Date(v.expiresAt) <= new Date()) {
+      return <span className="nx-badge nx-badge-warn">Expired</span>
+    }
+    if (v.redeemedCount >= v.maxRedemptions) {
+      return <span className="nx-badge nx-badge-neutral">Exhausted</span>
+    }
+    return <span className="nx-badge nx-badge-success">Active</span>
+  }
+
+  const allSelectedOnPage =
+    vouchers.length > 0 && vouchers.every((v) => selectedIds.has(v._id))
+
+  const toggleSelectAllOnPage = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (allSelectedOnPage) {
+        vouchers.forEach((v) => next.delete(v._id))
+      } else {
+        vouchers.forEach((v) => next.add(v._id))
+      }
+      return next
+    })
+  }
+
+  const toggleSelectOne = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const openEditVoucher = (v) => {
+    setEditTarget(v)
+    setEditForm({
+      targetPlan: v.targetPlan || 'starter',
+      isLifetime: Boolean(v.isLifetime),
+      durationDays: v.durationDays || 90,
+      maxRedemptions: v.maxRedemptions || 1,
+      expiresAt: v.expiresAt ? new Date(v.expiresAt).toISOString().slice(0, 10) : '',
+      active: Boolean(v.active),
+      notes: v.notes || '',
+    })
+  }
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault()
+    if (!editTarget) return
+    setSavingEdit(true)
+    try {
+      const res = await adminService.updateVoucher(editTarget._id, {
+        ...editForm,
+        maxRedemptions: Number(editForm.maxRedemptions) || 1,
+        durationDays: editForm.isLifetime ? null : Number(editForm.durationDays) || 90,
+        expiresAt: editForm.expiresAt || null,
+      })
+      notify(res.message)
+      setEditTarget(null)
+      loadInventory()
+      loadCampaigns()
+    } catch (err) {
+      notify(err?.userMessage || 'Failed to update redeem code', 'error')
+    } finally {
+      setSavingEdit(false)
+    }
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      if (deleteTarget.type === 'single') {
+        const res = await adminService.deleteVoucher(deleteTarget.item._id, {
+          force: Boolean(deleteTarget.force),
+        })
+        notify(res.message)
+      } else if (deleteTarget.type === 'bulk') {
+        const res = await adminService.bulkDeleteVouchers([...selectedIds], {
+          force: Boolean(deleteTarget.force),
+        })
+        notify(res.message)
+        setSelectedIds(new Set())
+      } else if (deleteTarget.type === 'campaign') {
+        const res = await adminService.deleteCampaignVouchers(deleteTarget.item.campaign, {
+          unredeemedOnly: !deleteTarget.force,
+        })
+        notify(res.message)
+      }
+      setDeleteTarget(null)
+      loadInventory()
+      loadCampaigns()
+    } catch (err) {
+      notify(err?.userMessage || 'Delete failed', 'error')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   const handleRevokeConfirm = async (e) => {
     e.preventDefault()
     if (!revokeTarget) return
     setRevoking(true)
     try {
       const res = await adminService.revokeRedemption({
+        redemptionId: revokeTarget._id,
         code: revokeTarget.code,
         reason: revokeReason,
+        disableVoucher: revokeDisableVoucher,
       })
       notify(res.message)
       setRevokeTarget(null)
       loadRedemptions()
+      loadInventory()
     } catch (err) {
       notify(err?.userMessage || 'Failed to revoke code', 'error')
     } finally {
@@ -260,6 +399,16 @@ export default function VouchersPage() {
         </div>
 
         <div className="nx-controls">
+          {tab === 'inventory' && selectedIds.size > 0 && (
+            <button
+              type="button"
+              className="nx-btn nx-btn-sm nx-btn-danger"
+              onClick={() => setDeleteTarget({ type: 'bulk', force: false })}
+            >
+              <Trash2 size={15} />
+              <span>Delete Selected ({selectedIds.size})</span>
+            </button>
+          )}
           <button
             type="button"
             className="nx-btn nx-btn-sm"
@@ -268,10 +417,20 @@ export default function VouchersPage() {
             <Layers size={15} />
             <span>AppSumo 2k Preset</span>
           </button>
+          <select
+            className="nx-select"
+            style={{ height: '2.05rem', fontSize: '0.81rem' }}
+            aria-label="CSV export filter"
+            value={exportUnredeemedOnly ? 'unredeemed' : 'all'}
+            onChange={(e) => setExportUnredeemedOnly(e.target.value === 'unredeemed')}
+          >
+            <option value="unredeemed">CSV: Unredeemed</option>
+            <option value="all">CSV: All Codes</option>
+          </select>
           <button
             type="button"
             className="nx-btn nx-btn-sm"
-            onClick={() => handleExport(campaignFilter, true)}
+            onClick={() => handleExport(campaignFilter, exportUnredeemedOnly)}
           >
             <Download size={15} />
             <span>Export CSV</span>
@@ -362,6 +521,14 @@ export default function VouchersPage() {
               <table className="nx-table">
                 <thead>
                   <tr>
+                    <th style={{ width: '2.2rem' }}>
+                      <input
+                        type="checkbox"
+                        aria-label="Select all codes on page"
+                        checked={allSelectedOnPage}
+                        onChange={toggleSelectAllOnPage}
+                      />
+                    </th>
                     <th>Code</th>
                     <th>Campaign</th>
                     <th>Tier &amp; Term</th>
@@ -375,8 +542,30 @@ export default function VouchersPage() {
                 <tbody>
                   {vouchers.map((v) => (
                     <tr key={v._id}>
-                      <td className="nx-mono" style={{ fontWeight: 700 }}>
-                        {v.code}
+                      <td>
+                        <input
+                          type="checkbox"
+                          aria-label={`Select ${v.code}`}
+                          checked={selectedIds.has(v._id)}
+                          onChange={() => toggleSelectOne(v._id)}
+                        />
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                          <span className="nx-mono" style={{ fontWeight: 700 }}>
+                            {v.code}
+                          </span>
+                          <button
+                            type="button"
+                            className="nx-btn nx-btn-sm"
+                            style={{ padding: '0 0.45rem', height: '1.75rem' }}
+                            title="Copy code"
+                            aria-label={`Copy ${v.code}`}
+                            onClick={() => copyCode(v.code)}
+                          >
+                            {copiedCode === v.code ? <Check size={12} /> : <Copy size={12} />}
+                          </button>
+                        </div>
                       </td>
                       <td>{v.campaign}</td>
                       <td>
@@ -402,22 +591,43 @@ export default function VouchersPage() {
                         {v.redeemedCount} / {v.maxRedemptions}
                       </td>
                       <td>{v.expiresAt ? formatShortDate(v.expiresAt) : 'No limit'}</td>
-                      <td>
-                        {v.active ? (
-                          <span className="nx-badge nx-badge-success">Active</span>
-                        ) : (
-                          <span className="nx-badge nx-badge-danger">Disabled</span>
-                        )}
-                      </td>
+                      <td>{getVoucherStatusBadge(v)}</td>
                       <td style={{ textAlign: 'right' }}>
-                        <button
-                          type="button"
-                          className={`nx-btn nx-btn-sm ${v.active ? 'nx-btn-danger' : ''}`}
-                          onClick={() => handleToggleVoucher(v)}
-                        >
-                          <Power size={13} />
-                          <span>{v.active ? 'Disable' : 'Enable'}</span>
-                        </button>
+                        <div className="nx-controls" style={{ justifyContent: 'flex-end' }}>
+                          <button
+                            type="button"
+                            className="nx-btn nx-btn-sm"
+                            title="Edit voucher"
+                            onClick={() => openEditVoucher(v)}
+                          >
+                            <Pencil size={13} />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            type="button"
+                            className={`nx-btn nx-btn-sm ${v.active ? 'nx-btn-danger' : ''}`}
+                            onClick={() => handleToggleVoucher(v)}
+                          >
+                            <Power size={13} />
+                            <span>{v.active ? 'Disable' : 'Enable'}</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="nx-btn nx-btn-sm nx-btn-danger"
+                            title="Delete redeem code"
+                            aria-label={`Delete ${v.code}`}
+                            onClick={() =>
+                              setDeleteTarget({
+                                type: 'single',
+                                item: v,
+                                force: v.redeemedCount > 0,
+                              })
+                            }
+                          >
+                            <Trash2 size={13} />
+                            <span>Delete</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -505,7 +715,7 @@ export default function VouchersPage() {
                           <button
                             type="button"
                             className="nx-btn nx-btn-sm"
-                            onClick={() => handleExport(c.campaign, true)}
+                            onClick={() => handleExport(c.campaign, exportUnredeemedOnly)}
                           >
                             <Download size={13} />
                             <span>CSV</span>
@@ -529,6 +739,21 @@ export default function VouchersPage() {
                               <span>Resume All</span>
                             </button>
                           )}
+                          <button
+                            type="button"
+                            className="nx-btn nx-btn-sm nx-btn-danger"
+                            title="Delete campaign codes"
+                            onClick={() =>
+                              setDeleteTarget({
+                                type: 'campaign',
+                                item: c,
+                                force: false,
+                              })
+                            }
+                          >
+                            <Trash2 size={13} />
+                            <span>Delete</span>
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -627,6 +852,7 @@ export default function VouchersPage() {
                             onClick={() => {
                               setRevokeTarget(r)
                               setRevokeReason('AppSumo 60-day refund processed')
+                              setRevokeDisableVoucher(true)
                             }}
                           >
                             <RotateCcw size={13} />
@@ -912,8 +1138,20 @@ export default function VouchersPage() {
                 </button>
               </div>
               {Array.isArray(genResult.sampleCodes) && (
-                <div className="nx-mono" style={{ fontSize: '0.82em' }}>
-                  Sample: {genResult.sampleCodes.join(', ')}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.82em', fontWeight: 600 }}>Click to copy:</span>
+                  {genResult.sampleCodes.map((code) => (
+                    <button
+                      key={code}
+                      type="button"
+                      className="nx-btn nx-btn-sm nx-mono"
+                      style={{ height: '1.85rem' }}
+                      onClick={() => copyCode(code)}
+                    >
+                      {copiedCode === code ? <Check size={12} /> : <Copy size={12} />}
+                      <span>{code}</span>
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
@@ -954,6 +1192,14 @@ export default function VouchersPage() {
                 required
               />
             </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5em', cursor: 'pointer', fontSize: '0.88rem' }}>
+              <input
+                type="checkbox"
+                checked={revokeDisableVoucher}
+                onChange={(e) => setRevokeDisableVoucher(e.target.checked)}
+              />
+              <span>Also disable voucher code for future redemptions (uncheck for shared promo codes)</span>
+            </label>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.65em' }}>
               <button type="button" className="nx-btn" onClick={() => setRevokeTarget(null)}>
                 Cancel
@@ -963,6 +1209,185 @@ export default function VouchersPage() {
               </button>
             </div>
           </form>
+        )}
+      </Modal>
+
+      {/* EDIT VOUCHER MODAL */}
+      <Modal
+        open={Boolean(editTarget)}
+        onClose={() => setEditTarget(null)}
+        title={editTarget ? `Edit Code · ${editTarget.code}` : 'Edit Redeem Code'}
+        width="36em"
+      >
+        {editTarget && (
+          <form onSubmit={handleEditSubmit} style={{ display: 'grid', gap: '1em' }}>
+            <div className="nx-grid-2">
+              <div className="nx-field">
+                <label className="nx-label">Target Plan</label>
+                <select
+                  className="nx-select"
+                  value={editForm.targetPlan}
+                  onChange={(e) => setEditForm((f) => ({ ...f, targetPlan: e.target.value }))}
+                >
+                  <option value="starter">Starter</option>
+                  <option value="business">Business</option>
+                </select>
+              </div>
+              <div className="nx-field">
+                <label className="nx-label">
+                  Max Redemptions (used: {editTarget.redeemedCount})
+                </label>
+                <input
+                  type="number"
+                  min={Math.max(1, editTarget.redeemedCount || 0)}
+                  className="nx-input"
+                  value={editForm.maxRedemptions}
+                  onChange={(e) => setEditForm((f) => ({ ...f, maxRedemptions: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="nx-field">
+                <label className="nx-label">Redeem-By Deadline</label>
+                <input
+                  type="date"
+                  className="nx-input"
+                  value={editForm.expiresAt}
+                  onChange={(e) => setEditForm((f) => ({ ...f, expiresAt: e.target.value }))}
+                />
+              </div>
+              <div className="nx-field">
+                <label className="nx-label">Duration (Days)</label>
+                <input
+                  type="number"
+                  min="1"
+                  className="nx-input"
+                  disabled={editForm.isLifetime}
+                  value={editForm.isLifetime ? '' : editForm.durationDays}
+                  placeholder={editForm.isLifetime ? 'Lifetime' : '90'}
+                  onChange={(e) => setEditForm((f) => ({ ...f, durationDays: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="nx-controls">
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5em', cursor: 'pointer', fontWeight: 600 }}>
+                <input
+                  type="checkbox"
+                  checked={editForm.isLifetime}
+                  onChange={(e) => setEditForm((f) => ({ ...f, isLifetime: e.target.checked }))}
+                />
+                <span>Lifetime Plan</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5em', cursor: 'pointer', fontWeight: 600 }}>
+                <input
+                  type="checkbox"
+                  checked={editForm.active}
+                  onChange={(e) => setEditForm((f) => ({ ...f, active: e.target.checked }))}
+                />
+                <span>Active</span>
+              </label>
+            </div>
+
+            <div className="nx-field">
+              <label className="nx-label">Internal Notes</label>
+              <input
+                className="nx-input"
+                value={editForm.notes}
+                onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.65em' }}>
+              <button type="button" className="nx-btn" onClick={() => setEditTarget(null)}>
+                Cancel
+              </button>
+              <button type="submit" className="nx-btn nx-btn-primary" disabled={savingEdit}>
+                {savingEdit ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </form>
+        )}
+      </Modal>
+
+      {/* DELETE CONFIRMATION MODAL */}
+      <Modal
+        open={Boolean(deleteTarget)}
+        onClose={() => !deleting && setDeleteTarget(null)}
+        title={
+          deleteTarget?.type === 'campaign'
+            ? `Delete Campaign "${deleteTarget.item.campaign}"`
+            : deleteTarget?.type === 'bulk'
+              ? `Delete ${selectedIds.size} Selected Code(s)`
+              : `Delete Code ${deleteTarget?.item?.code || ''}`
+        }
+        width="34em"
+      >
+        {deleteTarget && (
+          <div style={{ display: 'grid', gap: '1em' }}>
+            {deleteTarget.type === 'single' && (
+              <p className="nx-muted" style={{ margin: 0 }}>
+                {deleteTarget.item.redeemedCount > 0
+                  ? `This code has been redeemed ${deleteTarget.item.redeemedCount} time(s). Deleting removes it from voucher inventory while preserving historical redemption receipts.`
+                  : `Permanently delete redeem code ${deleteTarget.item.code}? This cannot be undone.`}
+              </p>
+            )}
+
+            {deleteTarget.type === 'bulk' && (
+              <div style={{ display: 'grid', gap: '0.65em' }}>
+                <p className="nx-muted" style={{ margin: 0 }}>
+                  Permanently delete {selectedIds.size} selected redeem code(s) from inventory?
+                </p>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5em', cursor: 'pointer', fontSize: '0.88rem' }}>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(deleteTarget.force)}
+                    onChange={(e) =>
+                      setDeleteTarget((d) => (d ? { ...d, force: e.target.checked } : d))
+                    }
+                  />
+                  <span>Also delete codes that already have active redemptions</span>
+                </label>
+              </div>
+            )}
+
+            {deleteTarget.type === 'campaign' && (
+              <div style={{ display: 'grid', gap: '0.65em' }}>
+                <p className="nx-muted" style={{ margin: 0 }}>
+                  Remove codes in campaign <strong>{deleteTarget.item.campaign}</strong> ({deleteTarget.item.totalVouchers} total).
+                </p>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5em', cursor: 'pointer', fontSize: '0.88rem' }}>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(deleteTarget.force)}
+                    onChange={(e) =>
+                      setDeleteTarget((d) => (d ? { ...d, force: e.target.checked } : d))
+                    }
+                  />
+                  <span>Delete ALL codes (including redeemed ones) instead of unredeemed only</span>
+                </label>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.65em' }}>
+              <button
+                type="button"
+                className="nx-btn"
+                disabled={deleting}
+                onClick={() => setDeleteTarget(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="nx-btn nx-btn-danger"
+                disabled={deleting}
+                onClick={handleConfirmDelete}
+              >
+                <Trash2 size={14} />
+                <span>{deleting ? 'Deleting...' : 'Confirm Delete'}</span>
+              </button>
+            </div>
+          </div>
         )}
       </Modal>
     </div>

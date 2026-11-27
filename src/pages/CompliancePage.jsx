@@ -12,6 +12,7 @@ export default function CompliancePage() {
   const [items, setItems] = useState([])
   const [taxType, setTaxType] = useState('all')
   const [complianceStatus, setComplianceStatus] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -27,6 +28,7 @@ export default function CompliancePage() {
         limit: 25,
         taxType,
         complianceStatus,
+        status: statusFilter,
         search: search || undefined,
       })
       setItems(res.items || [])
@@ -36,7 +38,7 @@ export default function CompliancePage() {
     } finally {
       setLoading(false)
     }
-  }, [page, taxType, complianceStatus, search, notify])
+  }, [page, taxType, complianceStatus, statusFilter, search, notify])
 
   const loadWebhooks = useCallback(async () => {
     setLoading(true)
@@ -150,6 +152,20 @@ export default function CompliancePage() {
                 <option value="verified">Verified</option>
                 <option value="lut_violation_flagged">LUT Flagged</option>
                 <option value="lut_violation_refunded">LUT Auto-Refunded</option>
+              </select>
+              <select
+                className="nx-select"
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value)
+                  setPage(1)
+                }}
+              >
+                <option value="all">All Payment Statuses</option>
+                <option value="captured">Captured</option>
+                <option value="redeemed">Redeemed</option>
+                <option value="failed">Failed</option>
+                <option value="refunded">Refunded</option>
               </select>
             </div>
             <button type="button" className="nx-btn nx-btn-sm" onClick={loadLedger} disabled={loading}>

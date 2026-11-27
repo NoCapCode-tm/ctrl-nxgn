@@ -214,6 +214,10 @@ export default function AdminLayout() {
   const meta = ROUTE_META[location.pathname] || ROUTE_META['/overview']
   const complianceCount = alerts.lutComplianceAlerts + alerts.haltedSubscriptions
 
+  useEffect(() => {
+    document.title = `${meta.title} | Nexgn Admin Console`
+  }, [meta.title])
+
   const handleLogout = async () => {
     await logout()
     notify('Signed out of Nexgn Admin')
@@ -398,7 +402,7 @@ export default function AdminLayout() {
           <div className={styles.bannerWarn} role="alert">
             <span>
               You are signed in with the bootstrap default password. Rotate your Super Admin
-              password right away to secure <strong>admin.nexgn.cloud</strong>.
+              password right away to secure <strong>ctrl.nexgn.cloud</strong>.
             </span>
             <button
               type="button"

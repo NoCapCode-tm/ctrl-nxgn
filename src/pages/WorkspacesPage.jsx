@@ -12,6 +12,7 @@ export default function WorkspacesPage() {
   const [items, setItems] = useState([])
   const [search, setSearch] = useState('')
   const [plan, setPlan] = useState('all')
+  const [billingSource, setBillingSource] = useState('all')
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(false)
@@ -37,6 +38,7 @@ export default function WorkspacesPage() {
         limit: 20,
         search: search || undefined,
         plan,
+        billingSource,
       })
       setItems(res.items || [])
       setTotalPages(res.totalPages || 1)
@@ -45,7 +47,7 @@ export default function WorkspacesPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, plan, notify])
+  }, [page, search, plan, billingSource, notify])
 
   useEffect(() => {
     const id = window.setTimeout(() => {
@@ -133,6 +135,20 @@ export default function WorkspacesPage() {
               <option value="starter">Starter</option>
               <option value="business">Business</option>
             </select>
+            <select
+              className="nx-select"
+              value={billingSource}
+              onChange={(e) => {
+                setBillingSource(e.target.value)
+                setPage(1)
+              }}
+            >
+              <option value="all">All Sources</option>
+              <option value="razorpay">Razorpay Paid</option>
+              <option value="redeem_code">Redeem Code</option>
+              <option value="admin_grant">Admin Grant</option>
+              <option value="free">Free</option>
+            </select>
           </div>
           <button type="button" className="nx-btn nx-btn-sm" onClick={load} disabled={loading}>
             <RefreshCw size={14} />
@@ -175,6 +191,9 @@ export default function WorkspacesPage() {
                         </span>
                         <span className="nx-badge nx-badge-neutral">{w.billingSource}</span>
                         {w.isLifetime && <span className="nx-badge nx-badge-warn">Lifetime</span>}
+                        {w.activeRedeemCode && (
+                          <span className="nx-badge nx-badge-info nx-mono">{w.activeRedeemCode}</span>
+                        )}
                       </div>
                       <div className="nx-muted" style={{ marginTop: '0.25rem' }}>
                         {w.isLifetime

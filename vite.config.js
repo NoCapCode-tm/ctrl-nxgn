@@ -14,8 +14,14 @@ export default defineConfig({
     target: 'es2020',
     sourcemap: false,
     cssCodeSplit: true,
-    rollupOptions: {
+    rolldownOptions: {
       output: {
+        minify: {
+          compress: {
+            dropConsole: true,
+            dropDebugger: true,
+          },
+        },
         manualChunks(id) {
           const normalized = id.replace(/\\/g, '/')
           if (!normalized.includes('node_modules')) return
@@ -32,8 +38,5 @@ export default defineConfig({
         },
       },
     },
-  },
-  esbuild: {
-    drop: ['console', 'debugger'],
   },
 })

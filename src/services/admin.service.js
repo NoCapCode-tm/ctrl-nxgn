@@ -91,15 +91,54 @@ export const adminService = {
     return unwrapData(res)
   },
 
+  updateVoucher: async (id, payload) => {
+    const res = await apiClient.patch(`/superadmin/vouchers/${id}`, payload)
+    return {
+      data: unwrapData(res),
+      message: res?.data?.message || 'Voucher updated.',
+    }
+  },
+
+  deleteVoucher: async (id, { force = false } = {}) => {
+    const res = await apiClient.delete(`/superadmin/vouchers/${id}`, {
+      params: force ? { force: 'true' } : undefined,
+    })
+    return {
+      data: unwrapData(res),
+      message: res?.data?.message || 'Voucher deleted.',
+    }
+  },
+
+  bulkDeleteVouchers: async (ids, { force = false } = {}) => {
+    const res = await apiClient.post('/superadmin/vouchers/bulk-delete', { ids, force })
+    return {
+      data: unwrapData(res),
+      message: res?.data?.message || 'Selected vouchers deleted.',
+    }
+  },
+
+  deleteCampaignVouchers: async (campaign, { unredeemedOnly = true } = {}) => {
+    const res = await apiClient.delete(
+      `/superadmin/vouchers/campaign/${encodeURIComponent(campaign)}`,
+      { params: { unredeemedOnly: String(unredeemedOnly) } },
+    )
+    return {
+      data: unwrapData(res),
+      message: res?.data?.message || 'Campaign vouchers deleted.',
+    }
+  },
+
   listRedemptions: async (params = {}) => {
     const res = await apiClient.get('/superadmin/vouchers/redemptions', { params })
     return unwrapData(res)
   },
 
-  revokeRedemption: async ({ code, reason }) => {
+  revokeRedemption: async ({ redemptionId, code, reason, disableVoucher }) => {
     const res = await apiClient.post('/superadmin/vouchers/revoke-redemption', {
+      redemptionId,
       code,
       reason,
+      disableVoucher,
     })
     return {
       data: unwrapData(res),
@@ -169,5 +208,13 @@ export const adminService = {
 
   terminatePlatformSession: async (sessionId) => {
     await apiClient.delete(`/superadmin/security/sessions/${sessionId}`)
+  },
+
+  unlockUser2FA: async (userId) => {
+    const res = await apiClient.post(`/superadmin/security/unlock-2fa/${userId}`)
+    return {
+      data: unwrapData(res),
+      message: res?.data?.message || '2FA lockout cleared.',
+    }
   },
 }

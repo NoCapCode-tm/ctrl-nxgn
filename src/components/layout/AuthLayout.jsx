@@ -150,7 +150,7 @@ export default function AuthLayout() {
             </Link>
             <div data-anim="fade" className={styles.portalBadge}>
               <ShieldCheck size={14} aria-hidden="true" />
-              <span>admin.nexgn.cloud</span>
+              <span>ctrl.nexgn.cloud</span>
             </div>
           </header>
 

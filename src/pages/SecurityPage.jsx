@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { KeyRound, RefreshCw, ShieldAlert, Trash2 } from 'lucide-react'
+import { KeyRound, RefreshCw, ShieldAlert, Trash2, Unlock } from 'lucide-react'
 import { useAuth, useToast } from '@/hooks/useAdminContexts'
 import { usePageReveal } from '@/hooks/usePageReveal'
 import { adminService } from '@/services/admin.service'
@@ -75,6 +75,16 @@ export default function SecurityPage() {
       load()
     } catch (err) {
       notify(err?.userMessage || 'Failed to terminate session', 'error')
+    }
+  }
+
+  const handleUnlock2FA = async (userId) => {
+    try {
+      const res = await adminService.unlockUser2FA(userId)
+      notify(res.message)
+      load()
+    } catch (err) {
+      notify(err?.userMessage || 'Failed to unlock 2FA', 'error')
     }
   }
 
@@ -165,9 +175,30 @@ export default function SecurityPage() {
 
             <div style={{ padding: '0.85em', borderRadius: '0.75em', background: 'var(--app-surface-2)' }}>
               <strong>Active 2FA Account Lockouts:</strong> {radar?.blocked2faUsers?.length || 0}
-              {radar?.blocked2faUsers?.slice(0, 3).map((u) => (
-                <div key={u._id} className="nx-muted" style={{ marginTop: '0.25em' }}>
-                  {u.email} · {u.twoFAFailedAttempts} fails (until {formatDateTime(u.twoFABlockedUntil)})
+              {radar?.blocked2faUsers?.map((u) => (
+                <div
+                  key={u._id}
+                  className="nx-muted"
+                  style={{
+                    marginTop: '0.4em',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '0.5em',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <span>
+                    {u.email} · {u.twoFAFailedAttempts} fails (until {formatDateTime(u.twoFABlockedUntil)})
+                  </span>
+                  <button
+                    type="button"
+                    className="nx-btn nx-btn-sm"
+                    onClick={() => handleUnlock2FA(u._id)}
+                  >
+                    <Unlock size={13} />
+                    <span>Unlock 2FA</span>
+                  </button>
                 </div>
               ))}
             </div>

@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "homepage": "https://admin.nexgn.cloud",
+  "homepage": "https://ctrl.nexgn.cloud",
   "scripts": {
     "dev": "vite --port 5174",
     "build": "vite build",
